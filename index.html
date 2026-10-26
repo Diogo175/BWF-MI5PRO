@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Brightway Flasher V0.3</title>
+<title>Brightway Flasher V0.5</title>
 
 <style>
 * {
@@ -13,74 +13,73 @@
 
 body {
     margin: 0;
-    padding: 20px;
+    padding: 18px;
     background: #101318;
     color: #f1f3f5;
     font-family: Arial, sans-serif;
 }
 
 .container {
-    max-width: 500px;
+    max-width: 520px;
     margin: auto;
 }
 
 header {
     text-align: center;
-    margin: 15px 0 25px;
+    margin: 18px 0 25px;
 }
 
 .logo {
-    font-size: 28px;
+    font-size: 26px;
     font-weight: bold;
     color: #75e6a0;
 }
 
 .version {
     color: #9299a5;
-    font-size: 13px;
-    margin-top: 7px;
+    font-size: 12px;
+    margin-top: 8px;
 }
 
 .card {
     background: #191e26;
     border: 1px solid #303743;
     border-radius: 14px;
-    padding: 18px;
-    margin-bottom: 16px;
+    padding: 17px;
+    margin-bottom: 15px;
 }
 
 h2 {
     font-size: 17px;
-    margin: 0 0 16px;
+    margin: 0 0 15px;
 }
 
-.label {
-    color: #9299a5;
+label {
+    display: block;
     font-size: 13px;
-    margin-bottom: 5px;
+    color: #aeb5c0;
+    margin: 12px 0 7px;
 }
 
-.value {
-    font-size: 15px;
-    overflow-wrap: anywhere;
-}
-
-.status {
-    color: #ffcc70;
+select, input[type="file"] {
+    width: 100%;
+    background: #101318;
+    color: white;
+    border: 1px solid #414b59;
+    border-radius: 8px;
+    padding: 12px;
     font-size: 14px;
-    margin-top: 12px;
-    line-height: 1.5;
 }
 
 button {
     width: 100%;
-    padding: 14px;
-    border: none;
-    border-radius: 9px;
-    font-size: 15px;
-    font-weight: bold;
-    cursor: pointer;
+    padding: 13px;
     margin-top: 10px;
+    border: 0;
+    border-radius: 9px;
+    font-weight: bold;
+    font-size: 14px;
+    cursor: pointer;
 }
 
 .primary {
@@ -94,16 +93,8 @@ button {
     border: 1px solid #414b59;
 }
 
-button:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-}
-
 .row {
-    display: flex;
-    justify-content: space-between;
-    gap: 15px;
-    padding: 12px 0;
+    padding: 11px 0;
     border-bottom: 1px solid #303743;
 }
 
@@ -111,8 +102,22 @@ button:disabled {
     border-bottom: none;
 }
 
-.row .value {
-    text-align: right;
+.label {
+    color: #9299a5;
+    font-size: 12px;
+    margin-bottom: 5px;
+}
+
+.value {
+    font-size: 14px;
+    overflow-wrap: anywhere;
+}
+
+.status {
+    color: #ffcc70;
+    font-size: 13px;
+    line-height: 1.5;
+    margin-top: 12px;
 }
 
 .notice {
@@ -121,211 +126,277 @@ button:disabled {
     line-height: 1.6;
 }
 
+#log {
+    max-height: 200px;
+    overflow-y: auto;
+    overflow-wrap: anywhere;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.logline {
+    padding: 5px 0;
+    border-bottom: 1px solid #303743;
+}
+
 footer {
     text-align: center;
     color: #737d8b;
     font-size: 12px;
-    margin: 25px 0 10px;
+    padding: 12px;
 }
 </style>
 </head>
 
 <body>
-
 <div class="container">
 
-    <header>
-        <div class="logo">BRIGHTWAY FLASHER</div>
-        <div class="version">Version 0.3 · Bluetooth Test</div>
-    </header>
+<header>
+    <div class="logo">BRIGHTWAY FLASHER</div>
+    <div class="version">V0.5 · Firmware File Analyzer</div>
+</header>
 
-    <div class="card">
-        <h2>Roller auswählen</h2>
+<div class="card">
+    <h2>Roller auswählen</h2>
 
-        <div class="label">Ausgewähltes Modell</div>
-        <div class="value">Xiaomi Electric Scooter 5 Pro</div>
+    <label for="brand">Marke</label>
+    <select id="brand" onchange="updateModels()">
+        <option value="xiaomi">Xiaomi</option>
+        <option value="navee">NAVEE</option>
+    </select>
 
-        <button class="primary" id="connectBtn"
-            onclick="connectBluetooth()">
-            Bluetooth-Gerät suchen
-        </button>
+    <label for="model">Modell</label>
+    <select id="model" onchange="updateCompatibility()"></select>
 
-        <button class="secondary" id="disconnectBtn"
-            onclick="disconnectBluetooth()" disabled>
-            Verbindung trennen
-        </button>
-
-        <div class="status" id="status">
-            Status: Noch nicht verbunden
+    <div class="row">
+        <div class="label">Kompatibilität</div>
+        <div class="value" id="compatibility">
+            Noch nicht geprüft
         </div>
     </div>
 
-    <div class="card">
-        <h2>Verbindungsinformationen</h2>
+    <div class="status" id="modelStatus">
+        Wähle dein genaues Modell aus.
+    </div>
+</div>
 
-        <div class="row">
-            <span class="label">Gerätename</span>
-            <span class="value" id="deviceName">–</span>
-        </div>
+<div class="card">
+    <h2>Firmware-Datei analysieren</h2>
 
-        <div class="row">
-            <span class="label">Bluetooth</span>
-            <span class="value" id="bluetoothStatus">Nicht verbunden</span>
-        </div>
+    <label for="firmware">Datei auswählen</label>
+    <input type="file" id="firmware">
 
-        <div class="row">
-            <span class="label">Akku-Diagnose</span>
-            <span class="value" id="battery">Noch nicht geprüft</span>
-        </div>
+    <button class="primary" onclick="analyzeFile()">
+        Datei analysieren
+    </button>
+
+    <div class="row">
+        <div class="label">Dateiname</div>
+        <div class="value" id="fileName">Keine Datei ausgewählt</div>
     </div>
 
-    <div class="card">
-        <h2>Diagnoseprotokoll</h2>
-        <div id="log" class="notice">
-            Brightway Flasher V0.3 gestartet.
-            <br>Bereit für einen Bluetooth-Test.
-        </div>
+    <div class="row">
+        <div class="label">Dateigröße</div>
+        <div class="value" id="fileSize">–</div>
     </div>
 
-    <div class="card">
-        <h2>Hinweis</h2>
-        <p class="notice">
-            Diese Version testet die Bluetooth-Verbindung
-            und versucht, den standardisierten Akku-Dienst
-            auszulesen. Der Roller muss diesen Dienst anbieten,
-            damit ein Akkustand angezeigt werden kann.
-            Eine Verbindung allein bestätigt noch keine
-            vollständige Roller-Diagnose.
-        </p>
-        <p class="notice">
-            Firmware-Änderungen sind in dieser Version
-            nicht möglich.
-        </p>
+    <div class="row">
+        <div class="label">Dateityp</div>
+        <div class="value" id="fileType">–</div>
     </div>
 
-    <footer>
-        Brightway Flasher · V0.3
-    </footer>
+    <div class="row">
+        <div class="label">SHA-256-Prüfsumme</div>
+        <div class="value" id="checksum">–</div>
+    </div>
 
+    <div class="status" id="fileStatus">
+        Es wurde noch keine Datei analysiert.
+    </div>
+</div>
+
+<div class="card">
+    <h2>Analyseprotokoll</h2>
+    <div id="log" class="notice">
+        <div class="logline">Brightway Flasher V0.5 gestartet.</div>
+    </div>
+    <button class="secondary" onclick="clearLog()">
+        Protokoll leeren
+    </button>
+</div>
+
+<div class="card">
+    <h2>Sicherheit</h2>
+    <p class="notice">
+        Diese Version liest ausgewählte Dateien lokal im Browser
+        und berechnet eine SHA-256-Prüfsumme. Die Prüfsumme
+        identifiziert den Dateiinhalt, bestätigt aber nicht,
+        dass die Firmware echt, sicher oder mit dem Roller
+        kompatibel ist.
+    </p>
+    <p class="notice">
+        Die Modellliste ist eine Auswahlhilfe und keine
+        bestätigte Kompatibilitätsdatenbank. Firmware wird
+        weder verändert noch auf den Roller übertragen.
+    </p>
+</div>
+
+<footer>Brightway Flasher · V0.5</footer>
 </div>
 
 <script>
-let bluetoothDevice = null;
-let gattServer = null;
+const models = {
+    xiaomi: [
+        {
+            name: "Electric Scooter 5 Pro",
+            compatibility: "Modell erkannt; Firmware-Kompatibilität nicht geprüft"
+        },
+        {
+            name: "Electric Scooter 5 Max",
+            compatibility: "Modell erkannt; Firmware-Kompatibilität nicht geprüft"
+        },
+        {
+            name: "Electric Scooter 4 Pro",
+            compatibility: "Modell erkannt; Firmware-Kompatibilität nicht geprüft"
+        },
+        {
+            name: "Anderes Xiaomi-Modell",
+            compatibility: "Nicht geprüft"
+        }
+    ],
+    navee: [
+        {
+            name: "N40",
+            compatibility: "Nicht geprüft"
+        },
+        {
+            name: "N65",
+            compatibility: "Nicht geprüft"
+        },
+        {
+            name: "ST3",
+            compatibility: "Nicht geprüft"
+        },
+        {
+            name: "Anderes NAVEE-Modell",
+            compatibility: "Nicht geprüft"
+        }
+    ]
+};
 
-const connectBtn = document.getElementById("connectBtn");
-const disconnectBtn = document.getElementById("disconnectBtn");
-const statusText = document.getElementById("status");
-const deviceName = document.getElementById("deviceName");
-const bluetoothStatus = document.getElementById("bluetoothStatus");
-const batteryText = document.getElementById("battery");
-const logBox = document.getElementById("log");
+const brandSelect = document.getElementById("brand");
+const modelSelect = document.getElementById("model");
+const compatibility = document.getElementById("compatibility");
+const modelStatus = document.getElementById("modelStatus");
+const firmwareInput = document.getElementById("firmware");
 
 function addLog(message) {
     const line = document.createElement("div");
-    line.textContent = new Date().toLocaleTimeString("de-DE")
-        + " — " + message;
-    logBox.appendChild(line);
+    line.className = "logline";
+    line.textContent =
+        new Date().toLocaleTimeString("de-DE") + " — " + message;
+
+    document.getElementById("log").appendChild(line);
 }
 
-function setStatus(message) {
-    statusText.textContent = "Status: " + message;
+function updateModels() {
+    const brand = brandSelect.value;
+    modelSelect.innerHTML = "";
+
+    models[brand].forEach(function(item) {
+        const option = document.createElement("option");
+        option.value = item.name;
+        option.textContent = item.name;
+        modelSelect.appendChild(option);
+    });
+
+    updateCompatibility();
+    addLog("Marke ausgewählt: " + brandSelect.options[
+        brandSelect.selectedIndex
+    ].text);
 }
 
-async function connectBluetooth() {
-    if (!navigator.bluetooth) {
-        setStatus("Bluetooth-API nicht verfügbar");
-        addLog("Web Bluetooth wird hier nicht unterstützt.");
-        addLog("Öffne die Seite in Chrome über eine sichere HTTPS-Adresse.");
+function updateCompatibility() {
+    const selected = models[brandSelect.value].find(function(item) {
+        return item.name === modelSelect.value;
+    });
+
+    compatibility.textContent = selected
+        ? selected.compatibility
+        : "Nicht geprüft";
+
+    modelStatus.textContent =
+        "Die genaue Controller- und Firmware-Kompatibilität muss separat bestätigt werden.";
+}
+
+function formatBytes(bytes) {
+    if (bytes < 1024) return bytes + " Bytes";
+    if (bytes < 1024 * 1024) {
+        return (bytes / 1024).toFixed(2) + " KB";
+    }
+    return (bytes / (1024 * 1024)).toFixed(2) + " MB";
+}
+
+async function analyzeFile() {
+    const file = firmwareInput.files[0];
+
+    if (!file) {
+        document.getElementById("fileStatus").textContent =
+            "Bitte wähle zuerst eine Datei aus.";
+        addLog("Analyse abgebrochen: keine Datei ausgewählt.");
         return;
     }
 
-    try {
-        connectBtn.disabled = true;
-        setStatus("Suche nach Geräten …");
-        addLog("Bluetooth-Gerätesuche gestartet.");
+    document.getElementById("fileName").textContent = file.name;
+    document.getElementById("fileSize").textContent =
+        formatBytes(file.size);
+    document.getElementById("fileType").textContent =
+        file.type || "Vom Browser nicht erkannt";
+    document.getElementById("checksum").textContent = "Wird berechnet …";
+    document.getElementById("fileStatus").textContent =
+        "Datei wird lokal analysiert …";
 
-        bluetoothDevice = await navigator.bluetooth.requestDevice({
-            acceptAllDevices: true,
-            optionalServices: ["battery_service"]
-        });
-
-        deviceName.textContent =
-            bluetoothDevice.name || "Name nicht verfügbar";
-
-        bluetoothDevice.addEventListener(
-            "gattserverdisconnected",
-            onDisconnected
-        );
-
-        setStatus("Gerät ausgewählt");
-        addLog("Gerät ausgewählt: " +
-            (bluetoothDevice.name || "Unbekannt"));
-
-        setStatus("Verbindung wird hergestellt …");
-
-        gattServer = await bluetoothDevice.gatt.connect();
-
-        bluetoothStatus.textContent = "Verbunden";
-        disconnectBtn.disabled = false;
-
-        setStatus("Bluetooth-Verbindung hergestellt");
-        addLog("Bluetooth-Verbindung erfolgreich.");
-
-        await readBattery();
-
-    } catch (error) {
-        setStatus("Verbindung nicht hergestellt");
-        addLog("Fehler: " + error.message);
-    } finally {
-        connectBtn.disabled = false;
-    }
-}
-
-async function readBattery() {
-    if (!gattServer || !gattServer.connected) {
-        batteryText.textContent = "Nicht verbunden";
-        return;
-    }
+    addLog("Datei ausgewählt: " + file.name);
+    addLog("Größe: " + formatBytes(file.size));
 
     try {
-        const service =
-            await gattServer.getPrimaryService("battery_service");
+        if (!crypto.subtle) {
+            throw new Error(
+                "SHA-256 benötigt einen sicheren Browserkontext (HTTPS)."
+            );
+        }
 
-        const characteristic =
-            await service.getCharacteristic("battery_level");
+        const buffer = await file.arrayBuffer();
+        const digest = await crypto.subtle.digest("SHA-256", buffer);
 
-        const value = await characteristic.readValue();
-        const percent = value.getUint8(0);
+        const hash = Array.from(new Uint8Array(digest))
+            .map(function(byte) {
+                return byte.toString(16).padStart(2, "0");
+            })
+            .join("");
 
-        batteryText.textContent = percent + " %";
-        addLog("Standard-Akkudienst gelesen: " + percent + " %.");
+        document.getElementById("checksum").textContent = hash;
+        document.getElementById("fileStatus").textContent =
+            "Analyse abgeschlossen. Kompatibilität und Sicherheit sind nicht bestätigt.";
 
+        addLog("SHA-256-Prüfsumme berechnet.");
+        addLog("Dateiinhalt wurde nicht verändert.");
     } catch (error) {
-        batteryText.textContent = "Nicht verfügbar";
-        addLog("Kein lesbarer Standard-Akkudienst gefunden.");
+        document.getElementById("checksum").textContent =
+            "Nicht verfügbar";
+        document.getElementById("fileStatus").textContent =
+            error.message;
+
+        addLog("Analysehinweis: " + error.message);
     }
 }
 
-function onDisconnected() {
-    bluetoothStatus.textContent = "Nicht verbunden";
-    batteryText.textContent = "Nicht geprüft";
-    disconnectBtn.disabled = true;
-    gattServer = null;
-
-    setStatus("Verbindung getrennt");
-    addLog("Bluetooth-Verbindung getrennt.");
+function clearLog() {
+    document.getElementById("log").innerHTML = "";
+    addLog("Protokoll geleert.");
 }
 
-function disconnectBluetooth() {
-    if (bluetoothDevice && bluetoothDevice.gatt &&
-        bluetoothDevice.gatt.connected) {
-        bluetoothDevice.gatt.disconnect();
-    } else {
-        onDisconnected();
-    }
-}
+updateModels();
 </script>
-
 </body>
 </html>
