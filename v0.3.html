@@ -1,0 +1,331 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brightway Flasher V0.3</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 20px;
+    background: #101318;
+    color: #f1f3f5;
+    font-family: Arial, sans-serif;
+}
+
+.container {
+    max-width: 500px;
+    margin: auto;
+}
+
+header {
+    text-align: center;
+    margin: 15px 0 25px;
+}
+
+.logo {
+    font-size: 28px;
+    font-weight: bold;
+    color: #75e6a0;
+}
+
+.version {
+    color: #9299a5;
+    font-size: 13px;
+    margin-top: 7px;
+}
+
+.card {
+    background: #191e26;
+    border: 1px solid #303743;
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 16px;
+}
+
+h2 {
+    font-size: 17px;
+    margin: 0 0 16px;
+}
+
+.label {
+    color: #9299a5;
+    font-size: 13px;
+    margin-bottom: 5px;
+}
+
+.value {
+    font-size: 15px;
+    overflow-wrap: anywhere;
+}
+
+.status {
+    color: #ffcc70;
+    font-size: 14px;
+    margin-top: 12px;
+    line-height: 1.5;
+}
+
+button {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 9px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.primary {
+    background: #75e6a0;
+    color: #101318;
+}
+
+.secondary {
+    background: #29313c;
+    color: white;
+    border: 1px solid #414b59;
+}
+
+button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.row {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 12px 0;
+    border-bottom: 1px solid #303743;
+}
+
+.row:last-child {
+    border-bottom: none;
+}
+
+.row .value {
+    text-align: right;
+}
+
+.notice {
+    color: #aeb5c0;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+footer {
+    text-align: center;
+    color: #737d8b;
+    font-size: 12px;
+    margin: 25px 0 10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <header>
+        <div class="logo">BRIGHTWAY FLASHER</div>
+        <div class="version">Version 0.3 · Bluetooth Test</div>
+    </header>
+
+    <div class="card">
+        <h2>Roller auswählen</h2>
+
+        <div class="label">Ausgewähltes Modell</div>
+        <div class="value">Xiaomi Electric Scooter 5 Pro</div>
+
+        <button class="primary" id="connectBtn"
+            onclick="connectBluetooth()">
+            Bluetooth-Gerät suchen
+        </button>
+
+        <button class="secondary" id="disconnectBtn"
+            onclick="disconnectBluetooth()" disabled>
+            Verbindung trennen
+        </button>
+
+        <div class="status" id="status">
+            Status: Noch nicht verbunden
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Verbindungsinformationen</h2>
+
+        <div class="row">
+            <span class="label">Gerätename</span>
+            <span class="value" id="deviceName">–</span>
+        </div>
+
+        <div class="row">
+            <span class="label">Bluetooth</span>
+            <span class="value" id="bluetoothStatus">Nicht verbunden</span>
+        </div>
+
+        <div class="row">
+            <span class="label">Akku-Diagnose</span>
+            <span class="value" id="battery">Noch nicht geprüft</span>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Diagnoseprotokoll</h2>
+        <div id="log" class="notice">
+            Brightway Flasher V0.3 gestartet.
+            <br>Bereit für einen Bluetooth-Test.
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Hinweis</h2>
+        <p class="notice">
+            Diese Version testet die Bluetooth-Verbindung
+            und versucht, den standardisierten Akku-Dienst
+            auszulesen. Der Roller muss diesen Dienst anbieten,
+            damit ein Akkustand angezeigt werden kann.
+            Eine Verbindung allein bestätigt noch keine
+            vollständige Roller-Diagnose.
+        </p>
+        <p class="notice">
+            Firmware-Änderungen sind in dieser Version
+            nicht möglich.
+        </p>
+    </div>
+
+    <footer>
+        Brightway Flasher · V0.3
+    </footer>
+
+</div>
+
+<script>
+let bluetoothDevice = null;
+let gattServer = null;
+
+const connectBtn = document.getElementById("connectBtn");
+const disconnectBtn = document.getElementById("disconnectBtn");
+const statusText = document.getElementById("status");
+const deviceName = document.getElementById("deviceName");
+const bluetoothStatus = document.getElementById("bluetoothStatus");
+const batteryText = document.getElementById("battery");
+const logBox = document.getElementById("log");
+
+function addLog(message) {
+    const line = document.createElement("div");
+    line.textContent = new Date().toLocaleTimeString("de-DE")
+        + " — " + message;
+    logBox.appendChild(line);
+}
+
+function setStatus(message) {
+    statusText.textContent = "Status: " + message;
+}
+
+async function connectBluetooth() {
+    if (!navigator.bluetooth) {
+        setStatus("Bluetooth-API nicht verfügbar");
+        addLog("Web Bluetooth wird hier nicht unterstützt.");
+        addLog("Öffne die Seite in Chrome über eine sichere HTTPS-Adresse.");
+        return;
+    }
+
+    try {
+        connectBtn.disabled = true;
+        setStatus("Suche nach Geräten …");
+        addLog("Bluetooth-Gerätesuche gestartet.");
+
+        bluetoothDevice = await navigator.bluetooth.requestDevice({
+            acceptAllDevices: true,
+            optionalServices: ["battery_service"]
+        });
+
+        deviceName.textContent =
+            bluetoothDevice.name || "Name nicht verfügbar";
+
+        bluetoothDevice.addEventListener(
+            "gattserverdisconnected",
+            onDisconnected
+        );
+
+        setStatus("Gerät ausgewählt");
+        addLog("Gerät ausgewählt: " +
+            (bluetoothDevice.name || "Unbekannt"));
+
+        setStatus("Verbindung wird hergestellt …");
+
+        gattServer = await bluetoothDevice.gatt.connect();
+
+        bluetoothStatus.textContent = "Verbunden";
+        disconnectBtn.disabled = false;
+
+        setStatus("Bluetooth-Verbindung hergestellt");
+        addLog("Bluetooth-Verbindung erfolgreich.");
+
+        await readBattery();
+
+    } catch (error) {
+        setStatus("Verbindung nicht hergestellt");
+        addLog("Fehler: " + error.message);
+    } finally {
+        connectBtn.disabled = false;
+    }
+}
+
+async function readBattery() {
+    if (!gattServer || !gattServer.connected) {
+        batteryText.textContent = "Nicht verbunden";
+        return;
+    }
+
+    try {
+        const service =
+            await gattServer.getPrimaryService("battery_service");
+
+        const characteristic =
+            await service.getCharacteristic("battery_level");
+
+        const value = await characteristic.readValue();
+        const percent = value.getUint8(0);
+
+        batteryText.textContent = percent + " %";
+        addLog("Standard-Akkudienst gelesen: " + percent + " %.");
+
+    } catch (error) {
+        batteryText.textContent = "Nicht verfügbar";
+        addLog("Kein lesbarer Standard-Akkudienst gefunden.");
+    }
+}
+
+function onDisconnected() {
+    bluetoothStatus.textContent = "Nicht verbunden";
+    batteryText.textContent = "Nicht geprüft";
+    disconnectBtn.disabled = true;
+    gattServer = null;
+
+    setStatus("Verbindung getrennt");
+    addLog("Bluetooth-Verbindung getrennt.");
+}
+
+function disconnectBluetooth() {
+    if (bluetoothDevice && bluetoothDevice.gatt &&
+        bluetoothDevice.gatt.connected) {
+        bluetoothDevice.gatt.disconnect();
+    } else {
+        onDisconnected();
+    }
+}
+</script>
+
+</body>
+</html>
